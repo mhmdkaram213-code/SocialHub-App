@@ -1,5 +1,5 @@
 import React from 'react'
-import user from '../../assets/images/user.JPG'
+import user from '../../assets/images/user.jpg'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 export default function PostUpload() {
