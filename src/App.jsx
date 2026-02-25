@@ -8,9 +8,9 @@ import PostDetails from "./pages/PostDetails/PostDetails";
 import Notfound from "./pages/Notfound/Notfound";
 import Layout from "./components/Layout/Layout";
 import { Bounce, ToastContainer } from 'react-toastify';
-import AuthProvider from './context/Auth/Auth.context.Provider';
 import ProtectedRoute from './ProtectedRoute/ProtectedRoute';
 import AuthRoute from './AuthRoute/AuthRoute';
+import AuthProvider from './context/Auth/Auth.Context.Provider';
 function App() {
   const routes = createBrowserRouter([
     {
