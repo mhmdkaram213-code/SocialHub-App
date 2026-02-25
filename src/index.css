@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@plugin './hero.js';
+/* Note: You may need to change the path to fit your project structure */
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@custom-variant dark (&:is(.dark *));
+body {
+  font-family: 'Cairo Variable', sans-serif;
+}
+
+@layer base {
+  :root {
+    --font-cairo: 'Cairo Variable', sans-serif;
+    --radius-circle: 50%;
+  }
+}
+
+@layer base {
+  span,
+  a,
+  label {
+    display: inline-block;
+  }
+}
+@layer components {
+  .btn {
+    @apply cursor-pointer px-4 py-2 space-x-1 rounded-xl border border-gray-400/20;
+  }
+  .form-control {
+    @apply w-full pl-11 px-4 py-3 rounded-xl bg-gray-100 border border-gray-400/40 focus:outline-none focus:border-blue-500 transition-colors duration-200 focus:ring-1 focus:ring-blue-500/20;
+  }
+}
