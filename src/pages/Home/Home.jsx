@@ -76,7 +76,12 @@ export default function Home() {
   return (
     <>
       <PostUpload onPostCreated={handlePostCreated} />
-      <Feed posts={posts} isLoading={isLoading} error={error} refreshPosts={fetchPosts} />
+      <Feed
+        posts={posts}
+        isLoading={isLoading}
+        error={error}
+        refreshPosts={fetchPosts}
+      />
     </>
   );
 }

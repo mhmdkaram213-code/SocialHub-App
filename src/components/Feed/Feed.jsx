@@ -39,7 +39,10 @@ export default function Feed({ posts, isLoading, error, refreshPosts }) {
           ) : posts && posts.length > 0 ? (
             <div className="posts space-y-8">
               {posts.map(post => (
-                <PostCard key={post.id} post={post} />
+                <PostCard
+                  key={post.id}
+                  post={post}
+                />
               ))}
             </div>
           ) : (
