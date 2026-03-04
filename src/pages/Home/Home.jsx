@@ -25,18 +25,6 @@ export default function Home() {
       const { data } = await axios.request(options);
       const fetchedPosts = data.data.posts;
       setPosts(fetchedPosts);
-
-      // Extract and store current user's data from first fetched post (for optimistic updates)
-      if (fetchedPosts && fetchedPosts.length > 0 && !user) {
-        const firstPost = fetchedPosts[0];
-        if (firstPost.user) {
-          setUser({
-            _id: firstPost.user._id,
-            name: firstPost.user.name,
-            photo: firstPost.user.photo
-          });
-        }
-      }
     } catch (err) {
       console.error('Error fetching posts:', err);
       setError('Failed to load posts');
@@ -53,23 +41,69 @@ export default function Home() {
 
   // Handle new post creation with optimistic UI update
   const handlePostCreated = (newPost) => {
-    // Normalize the new post to ensure it has the full user object
-    const normalizedPost = {
+    // Normalize the new post to ensure it has the same shape as posts from the server
+    const hasServerUserObject =
+      newPost &&
+      typeof newPost.user === 'object' &&
+      newPost.user !== null;
+
+    const hasServerUserDisplayFields =
+      hasServerUserObject &&
+      (newPost.user.name ||
+        newPost.user.username ||
+        newPost.user.userName ||
+        newPost.user.photo);
+
+    // Start with the server post as the source of truth for everything else
+    let normalizedPost = {
       ...newPost,
-      user: {
-        _id: newPost.user?._id || user?._id,
-        name: newPost.user?.name || user?.name,
-        photo: newPost.user?.photo || user?.photo
-      },
       likes: newPost.likes || [],
       commentsCount: newPost.commentsCount || 0,
       topComment: newPost.topComment || null
     };
 
+    if (hasServerUserDisplayFields) {
+      // Server already returned a populated user object – just ensure field names are consistent
+      const serverUser = newPost.user;
+      normalizedPost.user = {
+        ...serverUser,
+        _id: serverUser._id || serverUser.id || serverUser._id,
+        name:
+          serverUser.name ||
+          serverUser.username ||
+          serverUser.userName ||
+          user?.name ||
+          user?.username ||
+          user?.userName,
+        photo: serverUser.photo || user?.photo || serverUser.photo
+      };
+    } else if (user) {
+      // Server user is missing or minimal – fall back to the confirmed auth user
+      normalizedPost.user = {
+        _id: user._id || user.id || (typeof newPost.user === 'string' ? newPost.user : undefined),
+        name: user.name || user.username || user.userName,
+        photo: user.photo
+      };
+    } else {
+      // No auth user loaded yet – keep whatever the server sent without fabricating display data
+      normalizedPost = {
+        ...normalizedPost,
+        user: newPost.user
+      };
+    }
+
     // Optimistically insert the normalized post at the top
     setPosts(prevPosts => {
       if (prevPosts === null) return [normalizedPost];
       return [normalizedPost, ...prevPosts];
+    });
+  };
+
+  // Handle post deletion with optimistic UI update
+  const handlePostDeleted = (postId) => {
+    setPosts(prevPosts => {
+      if (prevPosts === null) return null;
+      return prevPosts.filter(post => post._id !== postId && post.id !== postId);
     });
   };
 
@@ -81,6 +115,7 @@ export default function Home() {
         isLoading={isLoading}
         error={error}
         refreshPosts={fetchPosts}
+        onPostDeleted={handlePostDeleted}
       />
     </>
   );

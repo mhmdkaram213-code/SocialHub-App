@@ -1,7 +1,7 @@
 import PostCard from '../PostCard/PostCard';
 import PostCardSkeleton from '../PostCardSkeleton/PostCardSkeleton';
 
-export default function Feed({ posts, isLoading, error, refreshPosts }) {
+export default function Feed({ posts, isLoading, error, refreshPosts, onPostDeleted }) {
   return (
     <>
       <section className='py-10'>
@@ -9,7 +9,7 @@ export default function Feed({ posts, isLoading, error, refreshPosts }) {
           <div className="flex justify-between items-center mb-3">
             <h2 className='text-2xl font-semibold text-gray-600'>Latest Posts</h2>
             {!isLoading && posts && (
-              <button 
+              <button
                 onClick={refreshPosts}
                 className="text-sm px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
@@ -21,7 +21,7 @@ export default function Feed({ posts, isLoading, error, refreshPosts }) {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-4">
               {error}
-              <button 
+              <button
                 onClick={refreshPosts}
                 className="ml-2 text-sm underline hover:no-underline"
               >
@@ -40,8 +40,9 @@ export default function Feed({ posts, isLoading, error, refreshPosts }) {
             <div className="posts space-y-8">
               {posts.map(post => (
                 <PostCard
-                  key={post.id}
+                  key={post._id ?? post.id}
                   post={post}
+                  onPostDeleted={onPostDeleted}
                 />
               ))}
             </div>

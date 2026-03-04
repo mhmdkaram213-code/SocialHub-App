@@ -7,7 +7,7 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@
 import userImage from '../../assets/images/user.jpg';
 
 export default function Navbar() {
-  const { token, user, setToken, setUser } = useContext(AuthContext);
+  const { token, user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const isLoggedIn = !!token;
@@ -17,12 +17,7 @@ export default function Navbar() {
   const mobileToggleRef = useRef(null);
 
   const handleLogout = () => {
-    // Remove token and user from context and localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-    // Redirect to login page
+    logout();
     navigate('/login');
   };
 
@@ -170,7 +165,7 @@ export default function Navbar() {
                     />
                   </Button>
                 </DropdownTrigger>
-                <DropdownMenu 
+                <DropdownMenu
                   aria-label="Profile Actions"
                 >
                   <DropdownItem
@@ -224,7 +219,7 @@ export default function Navbar() {
       </div>
 
       {/* Backdrop with Backdrop Blur */}
-      <div 
+      <div
         className={`md:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={closeMobileMenu}
       />

@@ -7,7 +7,7 @@ import user from '../../assets/images/user.jpg';
 import { AuthContext } from '../../context/Auth/Auth.Context';
 
 export default function PostUpload({ onPostCreated }) {
-  const { token } = useContext(AuthContext);
+  const { token, user: authUser } = useContext(AuthContext);
   const [postBody, setPostBody] = useState('');
   const [image, setImage] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -15,6 +15,7 @@ export default function PostUpload({ onPostCreated }) {
 
   async function addPost(e) {
     e.preventDefault();
+    console.log("Current user at post creation:", authUser);
     // Validation: Check if post has content
     if (!postBody.trim() && !image) {
       toast.warning('Please add some content or an image');
@@ -81,8 +82,13 @@ export default function PostUpload({ onPostCreated }) {
     <section className='mt-8'>
       <form onSubmit={addPost} className="container mx-auto max-w-2xl bg-white rounded-2xl shadow-lg p-5">
         <header className="flex items-center space-x-4 mb-4">
-          <div className="avatar border-3 rounded-full border-blue-300">
-            <img src={user} alt="User Avatar" className="w-12 h-12 rounded-full object-cover object-center" />
+          <div className="avatar border-3 rounded-full border-blue-300 overflow-hidden w-12 h-12">
+            <img
+              src={authUser?.photo || user}
+              alt="User Avatar"
+              className="w-full h-full rounded-full object-cover object-center"
+              onError={(e) => { e.target.src = user; }}
+            />
           </div>
           <div className="author">
             <h2 className="text-lg font-semibold">Create Post</h2>

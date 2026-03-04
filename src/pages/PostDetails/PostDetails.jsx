@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useContext, useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/Auth/Auth.Context";
 import PostCard from "../../components/PostCard/PostCard";
 import PostCardSkeleton from "../../components/PostCardSkeleton/PostCardSkeleton";
@@ -11,6 +11,7 @@ import getPostComments from "../../services/api/CommentApi/getPostComments";
 export default function PostDetails() {
     const { id } = useParams();
     const { token } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [postDetails, setPostDetails] = useState(null);
     const [comments, setComments] = useState([]);
     const [isLoadingPost, setIsLoadingPost] = useState(false);
@@ -30,7 +31,7 @@ export default function PostDetails() {
                     }
                 };
                 const { data } = await axios.request(options);
-                
+
                 if (data.message === 'success') {
                     setPostDetails(data.data.post);
                 }
@@ -53,7 +54,7 @@ export default function PostDetails() {
             try {
                 setIsLoadingComments(true);
                 const response = await getPostComments(id, 50);
-                
+
                 if (response?.data?.comments) {
                     setComments(response.data.comments);
                 }
@@ -75,6 +76,15 @@ export default function PostDetails() {
         setComments(prevComments => [newComment, ...prevComments]);
     };
 
+    // Handle comment deletion - optimistically update UI
+    const handleCommentDeleted = (commentId) => {
+        setComments(prevComments => prevComments.filter(c => c._id !== commentId));
+    };
+
+    const handlePostDeleted = () => {
+        navigate('/');
+    };
+
     return (
         <>
             <section>
@@ -83,7 +93,10 @@ export default function PostDetails() {
                     {isLoadingPost ? (
                         <PostCardSkeleton />
                     ) : postDetails ? (
-                        <PostCard post={postDetails} />
+                        <PostCard
+                            post={postDetails}
+                            onPostDeleted={handlePostDeleted}
+                        />
                     ) : (
                         <div className="text-center text-gray-500 py-8">
                             {error || 'Post not found'}
@@ -119,6 +132,7 @@ export default function PostDetails() {
                                         comment={comment}
                                         postId={id}
                                         showAllReplies={true}
+                                        onCommentDeleted={handleCommentDeleted}
                                     />
                                 ))}
                             </div>

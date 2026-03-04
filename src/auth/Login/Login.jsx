@@ -9,8 +9,9 @@ import { toast } from 'react-toastify'
 import { loginSchema } from './../../schema/loginSchema/loginSchema'
 import { AuthContext } from '../../context/Auth/Auth.Context'
 import SignIn from '../../services/api/AuthApi/loginApi'
+import { getUserProfile } from '../../services/api/userApi'
 export default function Login() {
-    const {setToken } = useContext(AuthContext)
+    const { setToken, setUser } = useContext(AuthContext)
     const navigate = useNavigate()
     const [apiError, setApiError] = useState(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -30,12 +31,20 @@ export default function Login() {
             const res = await SignIn(userData)
             console.log(res)
             if (res.success) {
-                setToken(res.data.token)
-                localStorage.setItem('token', res.data.token)
-                toast.success('Logged in successfully!')
-                setTimeout(() => {
-                    navigate('/')
-                }, 1500)
+                const token = res.data.token;
+
+                // Immediately fetch full profile data BEFORE setting token/user and navigating
+                const profileRes = await getUserProfile(token);
+                if (profileRes.success) {
+                    setToken(token);
+                    setUser(profileRes.data);
+                    toast.success('Logged in successfully!');
+                    setTimeout(() => {
+                        navigate('/')
+                    }, 500)
+                } else {
+                    toast.error('Failed to load your profile details');
+                }
             } else {
                 setApiError(res.message)
                 toast.error(res.message)

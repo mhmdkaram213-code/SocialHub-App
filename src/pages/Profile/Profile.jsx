@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/Auth/Auth.Context';
 import { Button, Card, CardBody, Divider, Spinner } from '@heroui/react';
@@ -6,15 +6,18 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import userImage from '../../assets/images/user.jpg';
 import PostCard from '../../components/PostCard/PostCard';
-import { useProfile } from '../../hooks/useProfile';
-import { getUserPosts } from '../../services/api/userApi';
+import { getUserPosts, uploadProfilePhoto } from '../../services/api/userApi';
+import { toast } from 'react-toastify';
 
 export default function Profile() {
-  const { token } = useContext(AuthContext);
+  const { token, user: authUser, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
-  const { profile, isLoading: isLoadingProfile, error: profileError } = useProfile(token);
   const [userPosts, setUserPosts] = useState([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  console.log("Profile component - authUser from context:", authUser);
+  console.log("Profile component - token from context:", token);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -50,33 +53,43 @@ export default function Profile() {
     }
   }, [token]);
 
-  if (isLoadingProfile) {
-    return (
-      <div className="container mx-auto max-w-2xl py-8 flex items-center justify-center min-h-screen">
-        <Spinner label="Loading profile..." />
-      </div>
-    );
-  }
+  const handleImageClick = () => {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  };
 
-  if (profileError || !profile) {
-    return (
-      <div className="container mx-auto max-w-2xl py-8">
-        <Card className="bg-red-50 border border-red-200">
-          <CardBody className="text-center py-8">
-            <p className="text-red-600 text-lg font-semibold">Error Loading Profile</p>
-            <p className="text-red-500 mb-4">{profileError || 'Unable to load profile information'}</p>
-            <Button
-              color="primary"
-              onClick={() => navigate('/')}
-              className="bg-blue-500 text-white"
-            >
-              Back to Home
-            </Button>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Basic validation
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const res = await uploadProfilePhoto(token, file);
+
+      if (res.success) {
+        toast.success('Profile photo updated!');
+        // INSTANT UPDATE: Update the global AuthContext
+        setUser(res.data);
+      } else {
+        toast.error(res.message || 'Failed to update photo');
+      }
+    } catch (err) {
+      toast.error('Something went wrong during upload');
+    } finally {
+      setIsUploading(false);
+      // Reset input value to allow selecting same file again if needed
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const profile = authUser; // Use AuthContext as source of truth
 
   return (
     <div className="profile-page bg-gray-50 min-h-screen py-8">
@@ -85,45 +98,69 @@ export default function Profile() {
         <Card className="bg-white shadow-lg">
           <CardBody className="p-8">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              {/* Profile Image */}
-              <div className="shrink-0">
-                <img
-                  src={userImage}
-                  alt={profile?.username || 'User'}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-                  onError={(e) => {
-                    e.target.src = userImage;
-                  }}
+              {/* Profile Image with Upload Trigger */}
+              <div className="shrink-0 relative group">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
                 />
+                <div
+                  className={`relative w-32 h-32 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg cursor-pointer ${isUploading ? 'opacity-70 cursor-not-allowed' : 'hover:brightness-90'}`}
+                  onClick={handleImageClick}
+                >
+                  <img
+                    src={profile?.photo || userImage}
+                    alt={profile?.name || 'User'}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = userImage;
+                    }}
+                  />
+
+                  {/* Camera Icon Overlay */}
+                  <div className={`absolute inset-0 bg-black/30 flex flex-col items-center justify-center text-white transition-opacity duration-300 ${isUploading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    {isUploading ? (
+                      <Spinner size="sm" color="white" />
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={fas.faCamera} className="text-xl mb-1" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Change</span>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Profile Info */}
               <div className="flex-1 text-center md:text-left">
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                  {profile?.username || 'User'}
+                  {profile?.name || 'User'}
                 </h1>
-                
+
                 <div className="space-y-3 mb-6">
                   <p className="text-gray-600 text-lg flex items-center justify-center md:justify-start gap-2">
                     <FontAwesomeIcon icon={fas.faEnvelope} className="text-blue-500" />
                     <span>{profile?.email || 'No email'}</span>
                   </p>
-                  
+
                   {profile?.gender && (
                     <p className="text-gray-600 flex items-center justify-center md:justify-start gap-2">
                       <FontAwesomeIcon icon={fas.faVenusMars} className="text-blue-500" />
                       <span className="capitalize">{profile.gender}</span>
                     </p>
                   )}
-                  
-                  {profile?.dateOfBirth && (
+
+                  {profile?.dateOfBirth && !isNaN(new Date(profile.dateOfBirth).getTime()) && (
                     <p className="text-gray-600 flex items-center justify-center md:justify-start gap-2">
-                      <FontAwesomeIcon icon={fas.faCake} className="text-blue-500" />
+                      <FontAwesomeIcon icon={fas.faCakeCanary} className="text-blue-500" />
                       <span>{new Date(profile.dateOfBirth).toLocaleDateString()}</span>
                     </p>
                   )}
-                  
-                  {profile?.createdAt && (
+
+                  {profile?.createdAt && !isNaN(new Date(profile.createdAt).getTime()) && (
                     <p className="text-gray-600 flex items-center justify-center md:justify-start gap-2">
                       <FontAwesomeIcon icon={fas.faCalendarDays} className="text-blue-500" />
                       <span>Joined {new Date(profile.createdAt).toLocaleDateString()}</span>
@@ -177,7 +214,7 @@ export default function Profile() {
         {/* User Posts Section */}
         <div className="posts-section">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <FontAwesomeIcon icon={fas.faPosts} />
+            <FontAwesomeIcon icon={fas.faFileLines} />
             Recent Posts
           </h2>
 

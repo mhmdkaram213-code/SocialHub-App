@@ -12,6 +12,7 @@ export async function getUserProfile(token) {
         }
       }
     );
+    console.log("Profile API Response Data:", data);
     return {
       success: true,
       data: data.data
@@ -63,10 +64,10 @@ export async function getUserPosts(token) {
         }
       }
     );
-    
+
     // The API returns { data: [...posts] } where data is an array
     const posts = Array.isArray(data.data) ? data.data : [];
-    
+
     return {
       success: true,
       data: posts
@@ -77,6 +78,35 @@ export async function getUserPosts(token) {
       success: false,
       message: error.response?.data?.message || 'Failed to fetch posts',
       data: []
+    };
+  }
+}
+
+export async function uploadProfilePhoto(token, file) {
+  try {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const { data } = await axios.put(
+      `${API_BASE}/users/upload-photo`,
+      formData,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+    return {
+      success: true,
+      data: data.user || data.data || data, // Handle different API response structures
+      message: 'Photo updated successfully'
+    };
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to upload photo'
     };
   }
 }
