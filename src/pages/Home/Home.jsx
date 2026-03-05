@@ -99,6 +99,18 @@ export default function Home() {
     });
   };
 
+  // Handle post update from edit modal — use full post from server
+  const handlePostUpdated = (updatedPostFromServer) => {
+    if (!updatedPostFromServer?.id && !updatedPostFromServer?._id) return;
+    const postId = updatedPostFromServer._id ?? updatedPostFromServer.id;
+    setPosts((prevPosts) => {
+      if (!prevPosts) return prevPosts;
+      return prevPosts.map((p) =>
+        (p._id === postId || p.id === postId) ? updatedPostFromServer : p
+      );
+    });
+  };
+
   // Handle post deletion with optimistic UI update
   const handlePostDeleted = (postId) => {
     setPosts(prevPosts => {
@@ -116,6 +128,7 @@ export default function Home() {
         error={error}
         refreshPosts={fetchPosts}
         onPostDeleted={handlePostDeleted}
+        onPostUpdated={handlePostUpdated}
       />
     </>
   );

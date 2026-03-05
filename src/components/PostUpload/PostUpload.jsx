@@ -15,7 +15,8 @@ export default function PostUpload({ onPostCreated }) {
 
   async function addPost(e) {
     e.preventDefault();
-    console.log("Current user at post creation:", authUser);
+    console.log("userAuth:", authUser);
+    console.log("userAuth.user:", authUser?.user);
     // Validation: Check if post has content
     if (!postBody.trim() && !image) {
       toast.warning('Please add some content or an image');
@@ -41,7 +42,11 @@ export default function PostUpload({ onPostCreated }) {
       if (status === 201 && data.success) {
         toast.success(data.message);
         // Optimistic UI update: Pass the new post to parent
-        const newPost = data.data.post;
+        // Ensure new post includes current user data for immediate correct display
+        const newPost = {
+          ...data.data.post,
+          user: authUser.user
+        };
         if (onPostCreated && newPost) {
           onPostCreated(newPost);
         }
@@ -84,7 +89,7 @@ export default function PostUpload({ onPostCreated }) {
         <header className="flex items-center space-x-4 mb-4">
           <div className="avatar border-3 rounded-full border-blue-300 overflow-hidden w-12 h-12">
             <img
-              src={authUser?.photo || user}
+              src={authUser?.user?.photo || user}
               alt="User Avatar"
               className="w-full h-full rounded-full object-cover object-center"
               onError={(e) => { e.target.src = user; }}

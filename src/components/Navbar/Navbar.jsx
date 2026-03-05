@@ -156,7 +156,7 @@ export default function Navbar() {
                     className="rounded-full h-11 w-11 p-0.5 overflow-hidden cursor-pointer ring-2 ring-gray-100 hover:ring-blue-400 transition-all duration-300 active:scale-95"
                   >
                     <img
-                      src={user?.photo || userImage}
+                      src={user?.user?.photo || userImage}
                       alt="Profile"
                       className="w-full h-full rounded-full object-cover"
                       onError={(e) => {
@@ -300,7 +300,7 @@ export default function Navbar() {
                 >
                   <div className="relative">
                     <img
-                      src={user?.photo || userImage}
+                      src={user?.user?.photo || userImage}
                       alt="Profile"
                       className="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
                       onError={(e) => {
@@ -310,7 +310,7 @@ export default function Navbar() {
                     <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                   </div>
                   <div className="text-left flex-1">
-                    <div className="text-base font-bold text-gray-900 leading-tight">{user?.name || 'Profile'}</div>
+                    <div className="text-base font-bold text-gray-900 leading-tight">{user?.user?.name || 'Profile'}</div>
                     <div className="text-sm text-gray-500">Manage your account</div>
                   </div>
                   <FontAwesomeIcon icon={fas.faChevronRight} className="text-gray-300 text-sm" />

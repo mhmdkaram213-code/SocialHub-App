@@ -1,7 +1,7 @@
 import PostCard from '../PostCard/PostCard';
 import PostCardSkeleton from '../PostCardSkeleton/PostCardSkeleton';
 
-export default function Feed({ posts, isLoading, error, refreshPosts, onPostDeleted }) {
+export default function Feed({ posts, isLoading, error, refreshPosts, onPostDeleted, onPostUpdated }) {
   return (
     <>
       <section className='py-10'>
@@ -43,6 +43,7 @@ export default function Feed({ posts, isLoading, error, refreshPosts, onPostDele
                   key={post._id ?? post.id}
                   post={post}
                   onPostDeleted={onPostDeleted}
+                  onPostUpdated={onPostUpdated}
                 />
               ))}
             </div>

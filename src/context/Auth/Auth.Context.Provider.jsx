@@ -19,8 +19,13 @@ export default function AuthProvider({ children }) {
         try {
             const res = await getUserProfile(authToken)
             if (res.success && res.data) {
-                const userData = res.data;
-                console.log("Successfully fetched profile data:", userData);
+                // Standardization: Store as { user: { ... } }
+                let profileData = res.data;
+                if (res.data.user) profileData = res.data.user;
+
+                const userData = { user: profileData };
+                console.log("AuthProvider - Profile synced from API:", userData);
+
                 setUser(userData)
                 localStorage.setItem('user', JSON.stringify(userData))
             } else {
@@ -51,14 +56,19 @@ export default function AuthProvider({ children }) {
         if (!userData) return;
 
         setUser(prev => {
-            // ROOT CAUSE BUG FIX: Handle possible nested 'user' or 'data' wrapper from API
-            // Some endpoints return { user: { ... } }, others return { data: { ... } }
-            // and some just return the user object directly.
-            let newUserData = userData;
-            if (userData.user) newUserData = userData.user;
-            else if (userData.data) newUserData = userData.data;
+            // Standardize structure: We want to maintain { user: { ...profileData } }
+            // userData might be { user: { ... } }, { data: { ... } }, or just { ...profileData }
+            let profileData = userData;
+            if (userData.user) profileData = userData.user;
+            else if (userData.data) profileData = userData.data;
 
-            const updated = { ...prev, ...newUserData };
+            // Merge with existing profile data if it exists
+            const currentProfile = prev?.user || {};
+            const updatedProfile = { ...currentProfile, ...profileData };
+
+            const updated = { ...prev, user: updatedProfile };
+
+            console.log("AuthProvider - State updated:", updated);
             localStorage.setItem('user', JSON.stringify(updated));
             return updated;
         })

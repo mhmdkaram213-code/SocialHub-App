@@ -64,15 +64,15 @@ export default function LeftSidebar() {
                     >
                         <div className="relative">
                             <img
-                                src={user?.photo || userImage}
+                                src={user?.user?.photo || userImage}
                                 alt="Profile"
                                 className="w-12 h-12 rounded-2xl object-cover border-2 border-white shadow-sm transition-transform group-hover:scale-105"
                             />
                             <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-[15px] font-bold text-gray-900 truncate tracking-tight">{user?.name || 'User'}</p>
-                            <p className="text-xs text-gray-500 truncate font-medium">@{user?.email?.split('@')[0] || 'username'}</p>
+                            <p className="text-[15px] font-bold text-gray-900 truncate tracking-tight">{user?.user?.name || 'User'}</p>
+                            <p className="text-xs text-gray-500 truncate font-medium">@{user?.user?.email?.split('@')[0] || 'username'}</p>
                         </div>
                         <div className="w-8 h-8 flex items-center justify-center text-gray-400 group-hover:text-gray-600 rounded-full hover:bg-white transition-colors">
                             <FontAwesomeIcon icon={fas.faEllipsis} />

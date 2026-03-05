@@ -13,32 +13,40 @@ import getPostComments from '../../services/api/CommentApi/getPostComments';
 import { useRef } from 'react';
 import deletePost from '../../services/api/PostApi/deletePost';
 import { toast } from 'react-toastify';
+import EditPostModal from '../EditPostModal/EditPostModal';
 
-export default function PostCard({ post, onPostDeleted }) {
+export default function PostCard({ post, onPostDeleted, onPostUpdated }) {
     const { token, user: authUser } = useContext(AuthContext);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [currentPost, setCurrentPost] = useState(post);
     const dropdownRef = useRef(null);
     const [comments, setComments] = useState([]);
     const [totalComments, setTotalComments] = useState(0);
     const [isLoadingComments, setIsLoadingComments] = useState(false);
     const [showCommentForm, setShowCommentForm] = useState(false);
 
+    // Sync local post state if prop changes
+    useEffect(() => {
+        setCurrentPost(post);
+    }, [post]);
+
     // Fallback user data structure - Ensure we pull from post.user correctly
-    const postUser = post?.user && typeof post.user === 'object' ? post.user : {};
+    const postUser = currentPost?.user && typeof currentPost.user === 'object' ? currentPost.user : {};
 
     // ROOT CAUSE BUG 2 INVESTIGATION (as requested)
-    const authId = authUser?._id || authUser?.id;
-    const postOwnerRaw = post?.user;
+    const authId = authUser?.user?._id || authUser?.user?.id;
+    const postOwnerRaw = currentPost?.user;
     const ownerId = (typeof postOwnerRaw === 'string') ? postOwnerRaw : (postOwnerRaw?._id || postOwnerRaw?.id);
 
-    console.log("Current user ID:", authId, typeof authId);
-    console.log("Post author ID:", ownerId, typeof ownerId);
+    console.log("currentUser id:", authId, typeof authId);
+    console.log("post author id:", ownerId, typeof ownerId);
 
     const isPostOwner = authId && ownerId && String(authId) === String(ownerId);
 
     // BUG 1 FIX: If it's the owner, use official authUser data to avoid stale/unpopulated info
-    const displayUser = isPostOwner ? authUser : postUser;
+    const displayUser = isPostOwner ? authUser.user : postUser;
     const userPhoto = displayUser?.photo || defaultAvatar;
     const userName = displayUser?.name || displayUser?.username || displayUser?.userName || 'User';
 
@@ -92,15 +100,30 @@ export default function PostCard({ post, onPostDeleted }) {
         setTotalComments(prevTotal => Math.max(0, prevTotal - 1));
     };
 
+    // Handle comment edit - use full comment from server response
+    const handleCommentUpdated = (updatedCommentFromServer) => {
+        if (!updatedCommentFromServer?._id) return;
+        setComments((prev) =>
+            prev.map((c) => (c._id === updatedCommentFromServer._id ? updatedCommentFromServer : c))
+        );
+    };
+
+    const handlePostUpdated = (fullPostFromServer) => {
+        if (!fullPostFromServer) return;
+        setCurrentPost(fullPostFromServer);
+        onPostUpdated?.(fullPostFromServer);
+    };
+
     const handleDelete = async () => {
         try {
             setIsDeleting(true);
-            const response = await deletePost(post._id, token);
+            const postId = currentPost?._id || currentPost?.id;
+            const response = await deletePost(postId, token);
             if (response.status === 200 || response.status === 204 || response.data?.message === 'success') {
                 toast.success('Post deleted successfully');
                 setIsDropdownOpen(false);
                 if (onPostDeleted) {
-                    onPostDeleted(post._id);
+                    onPostDeleted(currentPost._id);
                 }
             }
         } catch (error) {
@@ -125,8 +148,8 @@ export default function PostCard({ post, onPostDeleted }) {
                     <div>
                         <h3 className='font-semibold'>{userName}</h3>
                         <time className='text-sm text-gray-600 block -mt-1' >
-                            <Link to={`/post/${post?._id || post?.id}`} className='hover:underline'>
-                                {post?.createdAt ? new Date(post.createdAt).toLocaleString() : 'Just now'}
+                            <Link to={`/post/${currentPost?._id || currentPost?.id}`} className='hover:underline'>
+                                {currentPost?.createdAt ? new Date(currentPost.createdAt).toLocaleString() : 'Just now'}
                             </Link>
                         </time>
                     </div>
@@ -149,7 +172,8 @@ export default function PostCard({ post, onPostDeleted }) {
                                 <button
                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
                                     onClick={() => {
-                                        toast.info("Edit feature coming soon!");
+                                        console.log("Opening EditPostModal with post:", currentPost);
+                                        setIsEditModalOpen(true);
                                         setIsDropdownOpen(false);
                                     }}
                                 >
@@ -171,10 +195,10 @@ export default function PostCard({ post, onPostDeleted }) {
             </header>
             <figure className="post-info">
                 <figcaption className='mb-4 text-gray-700'>
-                    {post?.body}
+                    {currentPost?.body}
                 </figcaption>
-                {post?.image && <div className='-mx-8'>
-                    <img src={post.image} alt="Post Body" className="w-full h-120 object-cover object-center" />
+                {currentPost?.image && <div className='-mx-8'>
+                    <img src={currentPost.image} alt="Post Body" className="w-full h-120 object-cover object-center" />
                 </div>}
             </figure>
             <div className="reactions flex items-center justify-between">
@@ -187,18 +211,18 @@ export default function PostCard({ post, onPostDeleted }) {
                             <FontAwesomeIcon icon={fas.faHeart} />
                         </div>
                     </div>
-                    <span>{post?.likes?.length || 0} likes</span>
+                    <span>{currentPost?.likes?.length || 0} likes</span>
                 </div>
                 <div>
-                    <span>{post?.commentsCount || 0} comments</span>
+                    <span>{currentPost?.commentsCount || 0} comments</span>
                 </div>
             </div>
             <div className="action-btn flex items-center text-lg -mx-8 text-gray-700 border-y border-gray-400/30 p-4 gap-0">
                 <div className="flex-1 rounded-lg py-2 hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
                     <PostLikeButton
-                        postId={post._id}
-                        initialLikesCount={post?.likes?.length || 0}
-                        initialIsLiked={post?.isLiked || false}
+                        postId={currentPost._id}
+                        initialLikesCount={currentPost?.likes?.length || 0}
+                        initialIsLiked={currentPost?.isLiked || false}
                     />
                 </div>
                 <button className='flex-1 space-x-1 rounded-lg py-2 cursor-pointer hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center'>
@@ -225,7 +249,7 @@ export default function PostCard({ post, onPostDeleted }) {
                             </button>
                         ) : (
                             <CommentForm
-                                postId={post._id}
+                                postId={currentPost._id}
                                 onCommentCreated={handleCommentCreated}
                             />
                         )}
@@ -237,15 +261,16 @@ export default function PostCard({ post, onPostDeleted }) {
                                     <CommentThread
                                         key={comment._id}
                                         comment={comment}
-                                        postId={post._id}
+                                        postId={currentPost._id}
                                         showAllReplies={false}
                                         onCommentDeleted={handleCommentDeleted}
+                                        onCommentUpdated={handleCommentUpdated}
                                     />
                                 ))}
 
                                 {/* View All Comments Button */}
                                 {totalComments > 1 && (
-                                    <Link to={`/post/${post._id}`}>
+                                    <Link to={`/post/${currentPost._id}`}>
                                         <Button
                                             variant="light"
                                             size="sm"
@@ -267,6 +292,16 @@ export default function PostCard({ post, onPostDeleted }) {
                     </div>
                 )}
             </section>
+
+            {/* Edit Post Modal */}
+            <EditPostModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                post={currentPost}
+                onPostUpdated={handlePostUpdated}
+                token={token}
+                authUser={authUser}
+            />
         </div>
     );
 }

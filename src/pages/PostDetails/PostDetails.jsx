@@ -81,6 +81,14 @@ export default function PostDetails() {
         setComments(prevComments => prevComments.filter(c => c._id !== commentId));
     };
 
+    // Handle comment edit - use full comment from server response
+    const handleCommentUpdated = (updatedCommentFromServer) => {
+        if (!updatedCommentFromServer?._id) return;
+        setComments((prev) =>
+            prev.map((c) => (c._id === updatedCommentFromServer._id ? updatedCommentFromServer : c))
+        );
+    };
+
     const handlePostDeleted = () => {
         navigate('/');
     };
@@ -133,6 +141,7 @@ export default function PostDetails() {
                                         postId={id}
                                         showAllReplies={true}
                                         onCommentDeleted={handleCommentDeleted}
+                                        onCommentUpdated={handleCommentUpdated}
                                     />
                                 ))}
                             </div>

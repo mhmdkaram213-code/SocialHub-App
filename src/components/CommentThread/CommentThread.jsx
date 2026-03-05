@@ -4,11 +4,15 @@ import getCommentReplies from '../../services/api/CommentApi/getCommentReplies';
 import ReplyForm from '../ReplyForm/ReplyForm';
 import CommentCard from '../CommentCard/CommentCard';
 
-export default function CommentThread({ comment, postId, onCommentDeleted, showAllReplies = false }) {
+export default function CommentThread({ comment, postId, onCommentDeleted, onCommentUpdated, showAllReplies = false }) {
     const [replies, setReplies] = useState([]);
     const [isLoadingReplies, setIsLoadingReplies] = useState(false);
     const [totalReplies, setTotalReplies] = useState(0);
     const [showReplyForm, setShowReplyForm] = useState(false);
+
+    const handleReplyUpdated = (updatedReply) => {
+        setReplies((prev) => prev.map((r) => (r._id === updatedReply._id ? updatedReply : r)));
+    };
 
     useEffect(() => {
         const fetchReplies = async () => {
@@ -46,6 +50,7 @@ export default function CommentThread({ comment, postId, onCommentDeleted, showA
                 comment={comment}
                 postId={postId}
                 onCommentDeleted={onCommentDeleted}
+                onCommentUpdated={onCommentUpdated}
             />
 
             {/* Reply Toggle/Form Action area */}
@@ -79,6 +84,7 @@ export default function CommentThread({ comment, postId, onCommentDeleted, showA
                             postId={postId}
                             isReply={true}
                             onCommentDeleted={handleReplyDeleted}
+                            onCommentUpdated={handleReplyUpdated}
                         />
                     ))}
 

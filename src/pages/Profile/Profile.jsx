@@ -81,6 +81,7 @@ export default function Profile() {
         toast.error(res.message || 'Failed to update photo');
       }
     } catch (err) {
+      console.log(err);
       toast.error('Something went wrong during upload');
     } finally {
       setIsUploading(false);
@@ -89,7 +90,7 @@ export default function Profile() {
     }
   };
 
-  const profile = authUser; // Use AuthContext as source of truth
+  const profile = authUser.user; // Use AuthContext as source of truth
 
   return (
     <div className="profile-page bg-gray-50 min-h-screen py-8">
